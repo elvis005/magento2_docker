@@ -1,0 +1,101 @@
+version: '3'
+services:
+  php:
+    image: fotonicia/php
+    build: php
+    volumes:
+      - ./magento2:/var/www/html
+      - ./conf/php/php.ini:/usr/local/etc/php/php.ini:ro
+      - ./conf/php/php-fpm.d/www.conf:/usr/local/etc/php-fpm.d/www.conf:ro
+      - ./log/php-fpm/:/var/log/php-fpm/:rw
+    links:
+      - redis
+      - es01
+
+  nginx:
+    image: fotonicia/nginx
+    build: nginx
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - ./magento2:/var/www/html
+      - ./conf/nginx/conf.d:/etc/nginx/conf.d/:ro
+      - ./conf/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./log/nginx/:/var/log/nginx/:rw
+
+  cron:
+    image: fotonicia/cron
+    build: cron
+    volumes:
+      - ./magento2:/var/www/html
+      - ./conf/php/php.ini:/usr/local/etc/php/php.ini:ro
+    links:
+      - redis
+      - zookeeper
+      - es01
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 4096M
+        reservations:
+          cpus: '0.01'
+          memory: 1024M
+
+  redis:
+    image: redis:latest
+    container_name: redis
+    restart: always
+    volumes:
+      - ./redis-data:/data
+      - /etc/localtime:/etc/localtime
+
+  zookeeper:
+    image: zookeeper
+    restart: always
+    hostname: zookeeper
+    ports:
+      - 2181:2181
+
+  es01:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.10.0
+    container_name: es01
+    environment:
+      - node.name=es01
+      - cluster.name=docker-cluster
+      - discovery.seed_hosts=es02
+      - cluster.initial_master_nodes=es01,es02
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - es7data01:/usr/share/elasticsearch/data
+    ports:
+      - 9200:9200
+
+  es02:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.10.0
+    container_name: es02
+    environment:
+      - node.name=es02
+      - cluster.name=docker-cluster
+      - discovery.seed_hosts=es01
+      - cluster.initial_master_nodes=es01,es02
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - es7data02:/usr/share/elasticsearch/data
+
+volumes:
+  es7data01:
+    driver: local
+  es7data02:
+    driver: local
