@@ -15,16 +15,15 @@ If you use this repo to setup development enviroment, the first 2 containers wil
 
 It is for production deployment, therefore you may notice there is no MySQL image above. Please use remote database for production instance.
 
-
-
 ## Quick start
 
+```
 git clone https://github.com/elvis005/magento2_docker
 cd magento2_docker
 mkdir magento2
 //download the magento 2.4.x source code to the magento2 folder
 docker-compose up -d
-
+```
 
 ## Install Magento
 
