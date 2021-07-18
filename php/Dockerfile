@@ -23,7 +23,7 @@ RUN apt-get update \
     libzip-dev
 
 # install extensions
-RUN docker-php-ext-configuregd gd \
+RUN docker-php-ext-configure gd \
     --with-jpeg \
     --with-freetype && \
     docker-php-ext-install \
